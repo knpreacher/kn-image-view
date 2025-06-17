@@ -23,6 +23,7 @@ export default defineConfig({
       cssFileName: 'index',
       formats: ['es', 'umd'],
     },
+    copyPublicDir: false,
     rollupOptions: {
       external: ['vue'],
       output: {
