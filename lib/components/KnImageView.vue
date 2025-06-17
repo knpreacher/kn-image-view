@@ -1,14 +1,18 @@
 <script setup lang="ts">
-import {computed, nextTick, onMounted, ref, type TransitionProps, watch} from "vue";
+import {computed, nextTick, onMounted, ref, type TransitionGroupProps, watch} from "vue";
 import {Point} from "@/types.ts";
 
 const props = withDefaults(defineProps<{
   imageSrc: string,
   minScale?: number,
   maxScale?: number,
-  transition?: TransitionProps
+  transition?: TransitionGroupProps,
+  background?: boolean | string | ((ctx: CanvasRenderingContext2D) => void)
 }>(), {
   minScale: 0.1,
+  transition: () => ({
+    name: 'kn-image-view-transition'
+  }),
   maxScale: 8
 })
 
@@ -66,7 +70,16 @@ function drawTransparentBackground(
 
 function drawBackground(ctx: CanvasRenderingContext2D) {
   if (!ctx) return
-  drawTransparentBackground(ctx, 10)
+  if (typeof props.background === 'function') {
+    props.background(ctx)
+    return
+  }
+  if (typeof props.background === 'string') {
+    ctx.fillStyle = props.background
+    ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height)
+    return
+  }
+  if (props.background) drawTransparentBackground(ctx)
 }
 
 function onImageLoaded() {
@@ -274,7 +287,7 @@ defineSlots<{
 
 <template>
   <div ref="canvasWrapperRef" class="kn-image-view__canvas-wrapper">
-    <transition v-bind="transition">
+    <transition-group v-bind="transition">
       <slot name="loading" v-if="isImageLoading">
         <div>Loading</div>
       </slot>
@@ -289,7 +302,7 @@ defineSlots<{
             :width="canvasSize.x" :height="canvasSize.y"
         ></canvas>
       </slot>
-    </transition>
+    </transition-group>
   </div>
 </template>
 
