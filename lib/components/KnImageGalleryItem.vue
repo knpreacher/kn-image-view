@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import type {KnImageDataItem} from "@/types.ts";
-import {computed} from "vue";
+import type { KnImageDataItem } from "@/types.ts";
+import { computed } from "vue";
+import { useImageLoader } from "@/utils.ts";
+import ImageStateWrapper from "@/components/ImageStateWrapper.vue";
 
 const props = withDefaults(defineProps<{
   image: KnImageDataItem,
@@ -19,9 +21,17 @@ const emit = defineEmits<{
   click: [KnImageDataItem]
 }>()
 
+const {
+  isLoading,
+  isError,
+  loadImage
+} = useImageLoader()
+
 const wrapperStyle = computed(() => ({
   width: `${props.width}px`,
   height: `${props.height}px`,
+  minWidth: `${props.width}px`,
+  minHeight: `${props.height}px`
 }))
 
 const imageStyle = computed(() => ({
@@ -34,6 +44,8 @@ const imageStyle = computed(() => ({
 function onImageClick() {
   emit('click', props.image)
 }
+
+loadImage(props.image.src)
 </script>
 
 <template>
@@ -43,7 +55,16 @@ function onImageClick() {
       :style="wrapperStyle"
       :class="{[activeClass]: active}"
   >
-    <div class="kn-image-gallery-item__image" :style="imageStyle"></div>
+    <image-state-wrapper
+        :is-loading="isLoading" :is-error="isError"
+    >
+      <template #loading></template>
+      <template #error></template>
+      <div
+          class="kn-image-gallery-item__image"
+          :style="imageStyle"
+      />
+    </image-state-wrapper>
   </div>
 </template>
 

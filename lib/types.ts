@@ -4,6 +4,8 @@ export interface Point {
 }
 
 export interface KnImageDataItem {
+  title?: string,
+  description?: string,
   src: string,
   thumb?: string
 }

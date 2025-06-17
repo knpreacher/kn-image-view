@@ -57,3 +57,38 @@
     transform: scale(0.95);
     transition: transform 0.5s ease;
 }
+
+.kn-image-loader {
+    width: 50px;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: radial-gradient(farthest-side, #ffa516 94%, #0000) top/8px 8px no-repeat,
+    conic-gradient(#0000 30%, #ffa516);
+    -webkit-mask: radial-gradient(farthest-side, #0000 calc(100% - 8px), #000 0);
+    animation: l13 1s infinite linear;
+}
+
+@keyframes l13 {
+    100% {
+        transform: rotate(1turn)
+    }
+}
+
+.kn-image-view__canvas-side {
+    position: absolute;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    top: 0;
+    height: 100%;
+}
+
+.kn-image-view__canvas-side--left {
+    left: 0;
+    transform: scaleX(-1);
+}
+
+.kn-image-view__canvas-side--right {
+    right: 0;
+}

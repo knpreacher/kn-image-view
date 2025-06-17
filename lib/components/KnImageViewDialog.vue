@@ -1,9 +1,12 @@
 <script setup lang="ts">
-import {computed, onBeforeUnmount, onMounted, TransitionProps} from "vue";
-import type {KnImageData} from "@/types.ts";
-import {KnImageView} from "@/index.ts";
+import { computed, onBeforeUnmount, onMounted, TransitionProps } from "vue";
+import type { KnImageData } from "@/types.ts";
+import { KnImageView } from "@/index.ts";
 import KnImageGallery from "@/components/KnImageGallery.vue";
 
+interface KnImageViewDialogSlotProps {
+  closeDialog: () => void,
+}
 
 const props = withDefaults(defineProps<{
   transition?: TransitionProps,
@@ -37,7 +40,7 @@ const escapeKeyHandler = (e: KeyboardEvent) => {
   if (e.key === 'Escape') {
     e.preventDefault()
     e.stopPropagation()
-    isOpen.value = false
+    closeDialog()
   }
 }
 
@@ -48,6 +51,24 @@ function createDialogEvents() {
 function destroyDialogEvents() {
   window.removeEventListener('keydown', escapeKeyHandler)
 }
+
+function closeDialog() {
+  isOpen.value = false
+}
+
+function bindSlotProps(): KnImageViewDialogSlotProps {
+  return {
+    closeDialog
+  }
+}
+
+defineSlots<{
+  header: (props: KnImageViewDialogSlotProps) => any,
+  between: (props: KnImageViewDialogSlotProps) => any,
+  footer: (props: KnImageViewDialogSlotProps) => any,
+  loading: (props: KnImageViewDialogSlotProps) => any,
+  error: (props: KnImageViewDialogSlotProps) => any
+}>()
 
 onMounted(createDialogEvents)
 onBeforeUnmount(destroyDialogEvents)
@@ -61,12 +82,22 @@ onBeforeUnmount(destroyDialogEvents)
         class="kn-image-view-dialog"
         :style="dialogStyle"
     >
+      <slot v-bind="bindSlotProps()" name="header"></slot>
       <kn-image-view
           style="width: 100%; flex-grow: 1"
           :key="activeImage.src"
           :image-src="activeImage.src"
-      />
+      >
+        <template #error>
+          <slot v-bind="bindSlotProps()" name="error"></slot>
+        </template>
+        <template #loading>
+          <slot v-bind="bindSlotProps()" name="loading"></slot>
+        </template>
+      </kn-image-view>
+      <slot v-bind="bindSlotProps()" name="between"></slot>
       <kn-image-gallery v-model="activeIndex" :images="images"/>
+      <slot v-bind="bindSlotProps()" name="footer"></slot>
     </dialog>
   </transition>
 </template>

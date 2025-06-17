@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import {computed, nextTick, onMounted, ref, type TransitionGroupProps, watch} from "vue";
-import {Point} from "@/types.ts";
+import { nextTick, onMounted, ref, type TransitionGroupProps, watch } from "vue";
+import { Point } from "@/types.ts";
+import ImageStateWrapper from "@/components/ImageStateWrapper.vue";
+import { useImageLoader } from "@/utils.ts";
 
 const props = withDefaults(defineProps<{
   imageSrc: string,
@@ -37,8 +39,13 @@ const prevTouch = ref<Touch | undefined>()
 
 const cursorStyle = ref('move') // zoom-in
 
-const isImageLoading = ref(false)
-const isImageError = ref(false)
+const canvasImage = ref<HTMLImageElement | null>(null)
+
+const {
+  isLoading,
+  isError,
+  loadImage
+} = useImageLoader()
 
 function drawTransparentBackground(
     ctx: CanvasRenderingContext2D,
@@ -82,25 +89,6 @@ function drawBackground(ctx: CanvasRenderingContext2D) {
   if (props.background) drawTransparentBackground(ctx)
 }
 
-function onImageLoaded() {
-  updateCanvas()
-  isImageLoading.value = false
-  nextTick(createCanvasMouseEvents)
-}
-
-function onImageError() {
-  isImageLoading.value = false
-  isImageError.value = true
-}
-
-const canvasImage = computed(() => {
-  isImageLoading.value = true
-  const img = new Image()
-  img.src = props.imageSrc
-  img.onload = onImageLoaded
-  img.onerror = onImageError
-  return img
-})
 
 function getCanvasContext() {
   return canvasRef.value?.getContext('2d')
@@ -108,7 +96,7 @@ function getCanvasContext() {
 
 const getInitialRatio = (): number => {
   const ctx = getCanvasContext()
-  if (!ctx) return 1
+  if (!ctx || !canvasImage.value) return 1
   return Math.min(ctx.canvas.width / canvasImage.value.width, ctx.canvas.height / canvasImage.value.height)
 }
 
@@ -117,8 +105,8 @@ const getImCenterOffset = (): Point => {
   if (!ctx) return {x: 0, y: 0}
   const ratio = getInitialRatio()
 
-  const imWidth = canvasImage.value.width * ratio
-  const imHeight = canvasImage.value.height * ratio
+  const imWidth = (canvasImage.value?.width ?? 0) * ratio
+  const imHeight = (canvasImage.value?.height ?? 0) * ratio
 
   return {
     x: (ctx.canvas.width - imWidth) / 2,
@@ -153,6 +141,7 @@ function renderImage() {
 
   ctx.drawImage(img, imC.x - ctx.canvas.width / 2, imC.y - ctx.canvas.height / 2, img.width * ratio, img.height * ratio)
 
+  requestAnimationFrame(renderImage)
 }
 
 function updateCanvas() {
@@ -219,7 +208,6 @@ function createCanvasMouseEvents() {
   c.addEventListener("touchmove", (e: TouchEvent) => {
     const touch = e.touches.item(0)
     if (!touch) return
-    console.log(e)
     if (prevTouch.value) {
       const mx = touch.pageX - prevTouch.value.pageX
       const my = touch.pageY - prevTouch.value.pageY
@@ -274,35 +262,57 @@ onMounted(() => {
     resizeCanvas()
   })
 
+  loadImage(
+      props.imageSrc,
+      (img) => {
+        canvasImage.value = img
+        updateCanvas()
+      }
+  )
+
   updateCanvas()
 })
 
+watch(canvasRef, (value) => {
+  if (!value) return
+  createCanvasMouseEvents()
+})
+
 defineSlots<{
-  default: () => any
-  loading: () => any
-  error: () => any
+  default: (props: {}) => any
+  loading: (props: {}) => any
+  sideLeft: (props: {}) => any
+  sideRight: (props: {}) => any
+  error: (props: {}) => any
 }>()
 
 </script>
 
 <template>
   <div ref="canvasWrapperRef" class="kn-image-view__canvas-wrapper">
-    <transition-group v-bind="transition">
-      <slot name="loading" v-if="isImageLoading">
-        <div>Loading</div>
-      </slot>
-      <slot name="error" v-else-if="isImageError">
-        <div>Error</div>
-      </slot>
-      <slot v-else>
-        <canvas
-            @dblclick="onDoubleClick"
-            ref="canvasRef"
-            :style="{cursor: cursorStyle}"
-            :width="canvasSize.x" :height="canvasSize.y"
-        ></canvas>
-      </slot>
-    </transition-group>
+    <div class="kn-image-view__canvas-side kn-image-view__canvas-side--left">
+      <slot name="sideLeft"></slot>
+    </div>
+    <div class="kn-image-view__canvas-side kn-image-view__canvas-side--right">
+      <slot name="sideRight"></slot>
+    </div>
+    <image-state-wrapper
+        :is-loading="isLoading"
+        :is-error="isError"
+    >
+      <template #loading>
+        <slot name="loading"></slot>
+      </template>
+      <template #error>
+        <slot name="error"></slot>
+      </template>
+      <canvas
+          @dblclick="onDoubleClick"
+          ref="canvasRef"
+          :style="{cursor: cursorStyle}"
+          :width="canvasSize.x" :height="canvasSize.y"
+      ></canvas>
+    </image-state-wrapper>
   </div>
 </template>
 
