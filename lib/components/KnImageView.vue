@@ -141,7 +141,7 @@ function renderImage() {
 
   ctx.drawImage(img, imC.x - ctx.canvas.width / 2, imC.y - ctx.canvas.height / 2, img.width * ratio, img.height * ratio)
 
-  requestAnimationFrame(renderImage)
+  // requestAnimationFrame(renderImage)
 }
 
 function updateCanvas() {

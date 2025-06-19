@@ -1,22 +1,28 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, TransitionProps } from "vue";
-import type { KnImageData } from "@/types.ts";
-import { KnImageView } from "@/index.ts";
+import {computed, onBeforeUnmount, onMounted, TransitionProps} from "vue";
+import type {KnImageData} from "@/types.ts";
+import {KnImageView} from "@/index.ts";
 import KnImageGallery from "@/components/KnImageGallery.vue";
 
 interface KnImageViewDialogSlotProps {
   closeDialog: () => void,
+  nextImage: () => void,
+  prevImage: () => void,
+  activeIndex: number,
+  images: KnImageData
 }
 
 const props = withDefaults(defineProps<{
   transition?: TransitionProps,
   images: KnImageData,
   zIndex?: number,
+  closeOnEscape?: boolean,
   padding?: number
 }>(), {
   transition: () => ({
     name: 'kn-image-view-transition'
   }),
+  closeOnEscape: true,
   padding: 10,
   zIndex: 100
 })
@@ -37,7 +43,7 @@ const dialogStyle = computed(() => ({
 
 const escapeKeyHandler = (e: KeyboardEvent) => {
   // console.log(e.key, e)
-  if (e.key === 'Escape') {
+  if (e.key === 'Escape' && props.closeOnEscape) {
     e.preventDefault()
     e.stopPropagation()
     closeDialog()
@@ -56,9 +62,21 @@ function closeDialog() {
   isOpen.value = false
 }
 
+function nextImage() {
+  activeIndex.value = (activeIndex.value + 1) % props.images.length
+}
+
+function prevImage() {
+  activeIndex.value = (activeIndex.value - 1 + props.images.length) % props.images.length
+}
+
 function bindSlotProps(): KnImageViewDialogSlotProps {
   return {
-    closeDialog
+    closeDialog,
+    nextImage,
+    prevImage,
+    activeIndex: activeIndex.value,
+    images: props.images
   }
 }
 
@@ -67,7 +85,9 @@ defineSlots<{
   between: (props: KnImageViewDialogSlotProps) => any,
   footer: (props: KnImageViewDialogSlotProps) => any,
   loading: (props: KnImageViewDialogSlotProps) => any,
-  error: (props: KnImageViewDialogSlotProps) => any
+  error: (props: KnImageViewDialogSlotProps) => any,
+  sideLeft: (props: KnImageViewDialogSlotProps) => any,
+  sideRight: (props: KnImageViewDialogSlotProps) => any
 }>()
 
 onMounted(createDialogEvents)
@@ -88,6 +108,12 @@ onBeforeUnmount(destroyDialogEvents)
           :key="activeImage.src"
           :image-src="activeImage.src"
       >
+        <template #sideLeft>
+          <slot v-bind="bindSlotProps()" name="sideLeft"></slot>
+        </template>
+        <template #sideRight>
+          <slot v-bind="bindSlotProps()" name="sideRight"></slot>
+        </template>
         <template #error>
           <slot v-bind="bindSlotProps()" name="error"></slot>
         </template>

@@ -36,7 +36,7 @@ const wrapperStyle = computed(() => ({
 
 const imageStyle = computed(() => ({
   backgroundImage: `url(${props.image.src})`,
-  backgroundSize: props.cover ? 'cover' : 'contain',
+  backgroundSize: props.image.cover ?? (props.cover ? 'cover' : 'contain'),
   backgroundPosition: 'center',
   backgroundRepeat: 'no-repeat'
 }))

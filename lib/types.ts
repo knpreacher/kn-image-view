@@ -8,6 +8,9 @@ export interface KnImageDataItem {
   description?: string,
   src: string,
   thumb?: string
+  cover?: boolean
+
+  [key: string]: any
 }
 
 export interface KnImageData extends Array<KnImageDataItem> {

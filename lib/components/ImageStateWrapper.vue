@@ -6,11 +6,15 @@ defineProps<{
 </script>
 
 <template>
-  <slot v-if="isLoading" name="loading">
-    <div class="kn-image-loader"></div>
-  </slot>
-  <slot v-else-if="isError" name="error">Error loading image</slot>
-  <slot v-else></slot>
+  <div class="kn-image-state-wrapper">
+    <slot v-if="isLoading" name="loading">
+      <div class="kn-image-loader"></div>
+    </slot>
+    <slot v-else-if="isError" name="error">
+      <div class="kn-image-error">!</div>
+    </slot>
+    <slot v-else></slot>
+  </div>
 </template>
 
 <style scoped>
